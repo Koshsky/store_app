@@ -12,7 +12,14 @@ import (
 func SetupRouter(db *sql.DB) *gin.Engine {
 	r := gin.Default()
 
-	// Инициализация хендлеров
+	r.GET("/health", func(c *gin.Context) {
+		if err := db.Ping(); err != nil {
+			c.JSON(500, gin.H{"status": "unhealthy", "error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"status": "healthy"})
+	})
+
 	authHandler := handlers.NewAuthHandler(db)
 	warehousesHandler := handlers.NewWarehousesHandler(db)
 	salesHandler := handlers.NewSalesHandler(db)
