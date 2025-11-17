@@ -1,0 +1,671 @@
+# docs/swagger.yaml
+openapi: 3.0.3
+info:
+  title: SPbPU Store Management API
+  description: API для управления складом, продажами и расходами магазина
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@spbpu-store.ru
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Аутентификация и управление пользователями
+  - name: Warehouses
+    description: Управление товарами на складе
+  - name: Sales
+    description: Управление продажами
+  - name: Charges
+    description: Управление расходами
+  - name: ExpenseItems
+    description: Управление статьями расходов
+
+paths:
+  # ========== Аутентификация ==========
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Вход в систему
+      description: Аутентификация пользователя и получение JWT токена
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Неверный формат данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/profile:
+    get:
+      tags:
+        - Auth
+      summary: Получить профиль пользователя
+      description: Получить информацию о текущем пользователе
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение профиля
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Товары (Warehouses) ==========
+  /warehouses:
+    get:
+      tags:
+        - Warehouses
+      summary: Получить все товары
+      description: Возвращает список всех товаров на складе
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение списка товаров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Warehouses
+      summary: Создать новый товар
+      description: Добавляет новый товар на склад
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseCreate'
+      responses:
+        '201':
+          description: Товар успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Неверный формат данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизованный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /warehouses/{id}:
+    get:
+      tags:
+        - Warehouses
+      summary: Получить товар по ID
+      description: Возвращает информацию о конкретном товаре
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID товара
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Успешное получение товара
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Warehouses
+      summary: Обновить товар
+      description: Обновляет информацию о товаре
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID товара
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseCreate'
+      responses:
+        '200':
+          description: Товар успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Warehouses
+      summary: Удалить товар
+      description: Удаляет товар со склада
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID товара
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Товар успешно удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Продажи (Sales) ==========
+  /sales:
+    get:
+      tags:
+        - Sales
+      summary: Получить все продажи
+      description: Возвращает список всех продаж
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение списка продаж
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+    post:
+      tags:
+        - Sales
+      summary: Создать продажу
+      description: Создает новую продажу товара. Автоматически уменьшает количество товара на складе.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleCreate'
+      responses:
+        '201':
+          description: Продажа успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Недостаточно товара на складе или неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sales/{id}:
+    delete:
+      tags:
+        - Sales
+      summary: Удалить продажу
+      description: Удаляет продажу и возвращает товар на склад
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID продажи
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Продажа успешно удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Продажа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Расходы (Charges) ==========
+  /charges:
+    get:
+      tags:
+        - Charges
+      summary: Получить все расходы
+      description: Возвращает список всех расходов
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение списка расходов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+    post:
+      tags:
+        - Charges
+      summary: Создать расход
+      description: Создает новую запись о расходе
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargeCreate'
+      responses:
+        '201':
+          description: Расход успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Неверный формат данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /charges/{id}:
+    delete:
+      tags:
+        - Charges
+      summary: Удалить расход
+      description: Удаляет запись о расходе
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID расхода
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Расход успешно удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Расход не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ========== Статьи расходов (ExpenseItems) ==========
+  /expense-items:
+    get:
+      tags:
+        - ExpenseItems
+      summary: Получить все статьи расходов
+      description: Возвращает список всех статей расходов
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение списка статей расходов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+    post:
+      tags:
+        - ExpenseItems
+      summary: Создать статью расходов
+      description: Создает новую статью расходов
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseItemCreate'
+      responses:
+        '201':
+          description: Статья расходов успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Неверный формат данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /expense-items/{id}:
+    delete:
+      tags:
+        - ExpenseItems
+      summary: Удалить статью расходов
+      description: Удаляет статью расходов
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID статьи расходов
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Статья расходов успешно удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '404':
+          description: Статья расходов не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ========== Основные модели ==========
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "admin"
+        role:
+          type: string
+          example: "admin"
+          enum: [admin, user]
+
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Ноутбук игровой"
+        quantity:
+          type: integer
+          example: 10
+        amount:
+          type: number
+          format: float
+          example: 75000.50
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        warehouse_id:
+          type: integer
+          format: int64
+          example: 1
+        quantity:
+          type: integer
+          example: 2
+        amount:
+          type: number
+          format: float
+          example: 150000.00
+        sale_date:
+          type: string
+          format: date-time
+          example: "2024-01-15T14:30:00Z"
+
+    Charge:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        expense_item_id:
+          type: integer
+          format: int64
+          example: 1
+        amount:
+          type: number
+          format: float
+          example: 15000.00
+        charge_date:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00Z"
+
+    ExpenseItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Аренда помещения"
+
+    # ========== Запросы ==========
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "admin"
+        password:
+          type: string
+          example: "admin123"
+
+    WarehouseCreate:
+      type: object
+      required:
+        - name
+        - quantity
+        - amount
+      properties:
+        name:
+          type: string
+          example: "Новый товар"
+        quantity:
+          type: integer
+          minimum: 0
+          example: 100
+        amount:
+          type: number
+          format: float
+          minimum: 0
+          example: 1000.50
+
+    SaleCreate:
+      type: object
+      required:
+        - warehouse_id
+        - quantity
+      properties:
+        warehouse_id:
+          type: integer
+          format: int64
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    ChargeCreate:
+      type: object
+      required:
+        - expense_item_id
+        - amount
+      properties:
+        expense_item_id:
+          type: integer
+          format: int64
+          example: 1
+        amount:
+          type: number
+          format: float
+          minimum: 0
+          example: 15000.00
+
+    ExpenseItemCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Новая статья расходов"
+
+    # ========== Ответы ==========
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/User'
+        message:
+          type: string
+          example: "Авторизация успешна"
+
+    APIResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Данные ответа (может быть объектом, массивом или null)
+        message:
+          type: string
+          example: "Операция выполнена успешно"
+        error:
+          type: string
+          example: ""
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Товар не найден"
+        message:
+          type: string
+          example: ""

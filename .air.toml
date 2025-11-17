@@ -1,0 +1,57 @@
+# .air.toml
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/main ./cmd/service/main.go"
+bin = "tmp/main"
+tmp_dir = "tmp"
+full_bin = "./tmp/main"
+args_bin = []
+
+color = true
+
+kill_delay = 500
+
+include_dir = ["internal", "cmd", "static", "migrations"]
+include_ext = ["go", "tpl", "tmpl", "html", "css", "js", "sql"]
+include_file = []
+
+exclude_dir = [
+    "tmp", 
+    "vendor", 
+    "testdata", 
+    "node_modules", 
+    ".git",
+    "bin",
+    "logs"
+]
+exclude_file = []
+exclude_regex = [
+    ".*_test.go",
+    ".*.log",
+    ".*.tmp"
+]
+exclude_unchanged = false
+follow_symlink = false
+poll = false
+poll_interval = 0
+delay = 1000
+stop_on_root = false
+send_interrupt = false
+interrupt_timeout = 5
+
+[log]
+quiet = false
+time = true
+main_color = "magenta"
+watcher_color = "cyan"
+build_color = "yellow"
+runner_color = "green"
+
+[misc]
+clear_on_rebuild = true
+
+[screen]
+keep_scroll = true
