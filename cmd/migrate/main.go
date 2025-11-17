@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"store_app/internal/config"
+	"store_app/internal/database"
 
 	_ "github.com/lib/pq"
 )
@@ -20,18 +21,13 @@ type Migration struct {
 }
 
 func main() {
+	// Initialize database
 	cfg := config.Load()
-
-	db, err := sql.Open("postgres", cfg.GetDBConnectionString())
+	db, err := database.Init(cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to initialize database:", err)
 	}
 	defer db.Close()
-
-	// Проверяем соединение
-	if err := db.Ping(); err != nil {
-		log.Fatal("Failed to ping database:", err)
-	}
 
 	// Создаем таблицу для отслеживания миграций
 	if err := createMigrationsTable(db); err != nil {

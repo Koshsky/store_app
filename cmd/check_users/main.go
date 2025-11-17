@@ -3,17 +3,22 @@ package main
 import (
 	"fmt"
 	"log"
+	"store_app/internal/config"
 	"store_app/internal/database"
 )
 
 func main() {
-	if err := database.Init(); err != nil {
+	// Initialize database
+	cfg := config.Load()
+	db, err := database.Init(cfg.Database)
+	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
+	defer db.Close()
 
 	fmt.Println("=== CHECKING EXISTING USERS ===")
 
-	rows, err := database.DB.Query("SELECT id, username, password, role FROM users")
+	rows, err := db.Query("SELECT id, username, password, role FROM users")
 	if err != nil {
 		log.Printf("Error querying users: %v", err)
 		return

@@ -3,20 +3,25 @@ package main
 import (
 	"fmt"
 	"log"
+	"store_app/internal/config"
 	"store_app/internal/database"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
-	if err := database.Init(); err != nil {
+	// Initialize database
+	cfg := config.Load()
+	db, err := database.Init(cfg.Database)
+	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
+	defer db.Close()
 
 	fmt.Println("=== RESETTING USERS ===")
 
 	// Удаляем существующих пользователей
-	_, err := database.DB.Exec("DELETE FROM users")
+	_, err = db.Exec("DELETE FROM users")
 	if err != nil {
 		log.Printf("Error deleting users: %v", err)
 	} else {
@@ -40,7 +45,7 @@ func main() {
 			continue
 		}
 
-		_, err = database.DB.Exec(`
+		_, err = db.Exec(`
             INSERT INTO users (username, password, role) 
             VALUES ($1, $2, $3)`,
 			u.username, string(hashedPassword), u.role,
