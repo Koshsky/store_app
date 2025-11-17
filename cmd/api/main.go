@@ -16,6 +16,8 @@ func main() {
 	}
 	defer db.Close()
 
+	resetUsers(db)
+
 	// Setup router
 	router := router.SetupRouter(db)
 

@@ -1,0 +1,51 @@
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: spbpu_shop_db
+    environment:
+      POSTGRES_DB: spbpu_shop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - spbpu_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: spbpu_shop_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: spbpu_shop
+      SERVER_PORT: 8080
+      JWT_SECRET: Z6w3uwI5Bx9btGcB9dtkShcGVaQAHVe/Ljg1a7tIKhE=
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - spbpu_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  spbpu_network:
+    driver: bridge
