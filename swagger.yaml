@@ -23,8 +23,86 @@ tags:
     description: Управление расходами
   - name: ExpenseItems
     description: Управление статьями расходов
+  - name: Reports
+    description: Отчеты
 
 paths:
+  # ===== новые методы (reports) ===========
+  /reports/profit:
+    get:
+      tags:
+        - Reports
+      summary: Получить прибыль за месяц
+      description: Возвращает прибыль магазина за заданный месяц
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Месяц в формате YYYY-MM
+          schema:
+            type: string
+            example: "2024-01"
+        - name: year
+          in: query
+          required: true
+          description: Год
+          schema:
+            type: integer
+            example: 2024
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Неверный формат даты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reports/top-products:
+    get:
+      tags:
+        - Reports
+      summary: Получить топ-5 товаров по доходу
+      description: Возвращает пять самых доходных товаров за заданный интервал дат
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          required: true
+          description: Начальная дата в формате YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - name: end_date
+          in: query
+          required: true
+          description: Конечная дата в формате YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+            example: "2024-01-31"
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+        '400':
+          description: Неверный формат даты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   # ========== Аутентификация ==========
   /auth/login:
     post:

@@ -1,38 +1,34 @@
-// web/js/api.js
-class StoreAPI {
+class ApiService {
     constructor() {
-        this.baseURL = '/api/v1';
-        this.token = localStorage.getItem('jwtToken');
-    }
-
-    setToken(token) {
-        this.token = token;
-        localStorage.setItem('jwtToken', token);
-    }
-
-    getHeaders() {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-        return headers;
+        this.baseURL = '/api/v1'; // Относительный путь!
     }
 
     async request(endpoint, options = {}) {
-        const url = `${this.baseURL}${endpoint}`;
-        const config = {
-            headers: this.getHeaders(),
-            ...options
+        const token = localStorage.getItem('authToken');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
         };
 
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         try {
-            const response = await fetch(url, config);
+            const response = await fetch(`${this.baseURL}${endpoint}`, {
+                ...options,
+                headers
+            });
+
+            if (response.status === 401) {
+                logout();
+                return null;
+            }
+
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'API request failed');
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
             }
 
             return data;
@@ -42,101 +38,29 @@ class StoreAPI {
         }
     }
 
-    // Auth methods
-    async login(username, password) {
-        return this.request('/auth/login', {
+    async get(endpoint) {
+        return this.request(endpoint);
+    }
+
+    async post(endpoint, data) {
+        return this.request(endpoint, {
             method: 'POST',
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify(data)
         });
     }
 
-    async getProfile() {
-        return this.request('/auth/profile');
-    }
-
-    // Warehouses methods
-    async getWarehouses() {
-        return this.request('/warehouses');
-    }
-
-    async getWarehouse(id) {
-        return this.request(`/warehouses/${id}`);
-    }
-
-    async createWarehouse(warehouse) {
-        return this.request('/warehouses', {
-            method: 'POST',
-            body: JSON.stringify(warehouse)
-        });
-    }
-
-    async updateWarehouse(id, warehouse) {
-        return this.request(`/warehouses/${id}`, {
+    async put(endpoint, data) {
+        return this.request(endpoint, {
             method: 'PUT',
-            body: JSON.stringify(warehouse)
+            body: JSON.stringify(data)
         });
     }
 
-    async deleteWarehouse(id) {
-        return this.request(`/warehouses/${id}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // Sales methods
-    async getSales() {
-        return this.request('/sales');
-    }
-
-    async createSale(sale) {
-        return this.request('/sales', {
-            method: 'POST',
-            body: JSON.stringify(sale)
-        });
-    }
-
-    async deleteSale(id) {
-        return this.request(`/sales/${id}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // Charges methods
-    async getCharges() {
-        return this.request('/charges');
-    }
-
-    async createCharge(charge) {
-        return this.request('/charges', {
-            method: 'POST',
-            body: JSON.stringify(charge)
-        });
-    }
-
-    async deleteCharge(id) {
-        return this.request(`/charges/${id}`, {
-            method: 'DELETE'
-        });
-    }
-
-    // Expense Items methods
-    async getExpenseItems() {
-        return this.request('/expense-items');
-    }
-
-    async createExpenseItem(expenseItem) {
-        return this.request('/expense-items', {
-            method: 'POST',
-            body: JSON.stringify(expenseItem)
-        });
-    }
-
-    async deleteExpenseItem(id) {
-        return this.request(`/expense-items/${id}`, {
+    async delete(endpoint) {
+        return this.request(endpoint, {
             method: 'DELETE'
         });
     }
 }
 
-// Global API instance
-window.storeAPI = new StoreAPI();
+const apiService = new ApiService();

@@ -1,144 +1,121 @@
-// web/js/sales.js
 class SalesManager {
-    async showSalesPage() {
-        try {
-            const [salesResult, warehousesResult] = await Promise.all([
-                window.storeAPI.getSales(),
-                window.storeAPI.getWarehouses()
-            ]);
-
-            const sales = salesResult.data || [];
-            const warehouses = warehousesResult.data || [];
-
-            document.getElementById('content').innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>Продажи</h2>
-                    <button class="btn btn-success" onclick="salesManager.showCreateSaleForm()">Новая продажа</button>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Товар</th>
-                                <th>Количество</th>
-                                <th>Сумма</th>
-                                <th>Дата</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${sales.map(sale => `
-                                <tr>
-                                    <td>${sale.id}</td>
-                                    <td>${sale.product_name || `Товар #${sale.warehouse_id}`}</td>
-                                    <td>${sale.quantity}</td>
-                                    <td>${sale.amount} руб.</td>
-                                    <td>${new Date(sale.sale_date).toLocaleDateString('ru-RU')}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-danger" onclick="salesManager.deleteSale(${sale.id})">Удалить</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                            ${sales.length === 0 ? `
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">Нет данных о продажах</td>
-                                </tr>
-                            ` : ''}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        } catch (error) {
-            window.app.showError('Ошибка загрузки продаж: ' + error.message);
-        }
+    constructor() {
+        this.warehouses = [];
+        this.init();
     }
 
-    showCreateSaleForm() {
-        this.loadWarehouses().then(warehouses => {
-            document.getElementById('content').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6 mx-auto">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4>Новая продажа</h4>
-                            </div>
-                            <div class="card-body">
-                                <form id="createSaleForm">
-                                    <div class="mb-3">
-                                        <label for="warehouse_id" class="form-label">Товар</label>
-                                        <select class="form-control" id="warehouse_id" required>
-                                            <option value="">Выберите товар</option>
-                                            ${warehouses.map(w => `
-                                                <option value="${w.id}">${w.name} (в наличии: ${w.quantity})</option>
-                                            `).join('')}
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="quantity" class="form-label">Количество</label>
-                                        <input type="number" class="form-control" id="quantity" required min="1">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Создать продажу</button>
-                                    <button type="button" class="btn btn-secondary" onclick="salesManager.showSalesPage()">Отмена</button>
-                                </form>
-                                <div id="formError" class="alert alert-danger mt-3 d-none"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+    init() {
+        this.loadWarehouses();
+        this.loadSales();
+        this.attachEventListeners();
+    }
 
-            document.getElementById('createSaleForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await this.createSale();
-            });
-        });
+    attachEventListeners() {
+        const form = document.getElementById('saleForm');
+        if (form) {
+            form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
     }
 
     async loadWarehouses() {
         try {
-            const result = await window.storeAPI.getWarehouses();
-            return result.data || [];
+            const response = await apiService.get('/warehouses');
+            if (response && response.success) {
+                this.warehouses = response.data;
+                this.renderWarehousesDropdown();
+            }
         } catch (error) {
-            window.app.showError('Ошибка загрузки товаров: ' + error.message);
-            return [];
+            console.error('Error loading warehouses:', error);
         }
     }
 
-    async createSale() {
+    renderWarehousesDropdown() {
+        const select = document.getElementById('warehouse_id');
+        select.innerHTML = '<option value="">Выберите товар</option>';
+
+        this.warehouses.forEach(warehouse => {
+            const option = document.createElement('option');
+            option.value = warehouse.id;
+            option.textContent = `${warehouse.name} (${warehouse.quantity} в наличии)`;
+            select.appendChild(option);
+        });
+    }
+
+    async loadSales() {
+        try {
+            const response = await apiService.get('/sales');
+            if (response && response.success) {
+                this.renderSales(response.data);
+            }
+        } catch (error) {
+            console.error('Error loading sales:', error);
+        }
+    }
+
+    renderSales(sales) {
+        const tbody = document.getElementById('salesTableBody');
+        tbody.innerHTML = '';
+
+        sales.forEach(sale => {
+            const warehouse = this.warehouses.find(w => w.id === sale.warehouse_id);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${sale.id}</td>
+                <td>${warehouse ? warehouse.name : 'Товар не найден'}</td>
+                <td>${sale.quantity}</td>
+                <td>${sale.amount} ₽</td>
+                <td>${new Date(sale.sale_date).toLocaleDateString('ru-RU')}</td>
+                <td>
+                    <button class="btn-danger" onclick="salesManager.deleteSale(${sale.id})">
+                        Удалить
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    async handleSubmit(e) {
+        e.preventDefault();
+
         const formData = {
             warehouse_id: parseInt(document.getElementById('warehouse_id').value),
             quantity: parseInt(document.getElementById('quantity').value)
         };
 
+        // Проверяем наличие товара
+        const selectedWarehouse = this.warehouses.find(w => w.id === formData.warehouse_id);
+        if (selectedWarehouse && formData.quantity > selectedWarehouse.quantity) {
+            alert(`Недостаточно товара на складе. В наличии: ${selectedWarehouse.quantity}`);
+            return;
+        }
+
         try {
-            await window.storeAPI.createSale(formData);
-            this.showSalesPage();
+            const response = await apiService.post('/sales', formData);
+            if (response && response.success) {
+                this.loadSales();
+                this.loadWarehouses(); // Обновляем список товаров (количества изменились)
+                e.target.reset();
+            }
         } catch (error) {
-            this.showFormError(error.message);
+            console.error('Error creating sale:', error);
+            alert('Ошибка при создании продажи: ' + (error.message || 'Неизвестная ошибка'));
         }
     }
 
     async deleteSale(id) {
         if (confirm('Вы уверены, что хотите удалить эту продажу? Товар будет возвращен на склад.')) {
             try {
-                await window.storeAPI.deleteSale(id);
-                this.showSalesPage();
+                const response = await apiService.delete(`/sales/${id}`);
+                if (response && response.success) {
+                    this.loadSales();
+                    this.loadWarehouses(); // Обновляем список товаров
+                }
             } catch (error) {
-                window.app.showError('Ошибка удаления продажи: ' + error.message);
+                console.error('Error deleting sale:', error);
             }
         }
     }
-
-    showFormError(message) {
-        const errorDiv = document.getElementById('formError');
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('d-none');
-    }
 }
 
-window.salesManager = new SalesManager();
-
-// Integrate with main app
-window.app.showSales = () => window.salesManager.showSalesPage();
+const salesManager = new SalesManager();

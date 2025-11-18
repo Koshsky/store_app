@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная - SPbPU Store</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>SPbPU Store Management</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <button onclick="logout()" class="btn btn-secondary">Выйти</button>
+            </div>
+        </header>
+
+        <nav class="main-nav">
+            <div class="nav-grid">
+                <a href="warehouses.html" class="nav-card">
+                    <h3>📦 Склад</h3>
+                    <p>Управление товарами</p>
+                </a>
+                <a href="sales.html" class="nav-card">
+                    <h3>💰 Продажи</h3>
+                    <p>Управление продажами</p>
+                </a>
+                <a href="charges.html" class="nav-card">
+                    <h3>💸 Расходы</h3>
+                    <p>Управление расходами</p>
+                </a>
+                <a href="expense-items.html" class="nav-card">
+                    <h3>📋 Статьи расходов</h3>
+                    <p>Категории расходов</p>
+                </a>
+                <a href="report.html" class="nav-card">
+                    <h3>📊 Отчеты</h3>
+                    <p>Аналитика и отчетность</p>
+                </a>
+            </div>
+        </nav>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+</body>
+
+</html>

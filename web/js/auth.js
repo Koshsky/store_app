@@ -1,119 +1,85 @@
-// web/js/auth.js
-class AuthManager {
+class AuthService {
     constructor() {
-        this.currentUser = null;
         this.init();
     }
 
     init() {
-        this.checkAuthStatus();
+        this.checkAuthState();
+        this.attachEventListeners();
     }
 
-    async checkAuthStatus() {
-        const token = localStorage.getItem('jwtToken');
-        if (token) {
-            try {
-                window.storeAPI.setToken(token);
-                const profile = await window.storeAPI.getProfile();
-                this.currentUser = profile.data;
-                this.showAuthenticatedUI();
-            } catch (error) {
-                this.logout();
-            }
-        } else {
-            this.showLoginUI();
-        }
-    }
+    async handleLogin(e) {
+        e.preventDefault();
 
-    async login(username, password) {
+        const formData = new FormData(e.target);
+        const credentials = {
+            username: formData.get('username'),
+            password: formData.get('password')
+        };
+
         try {
-            const result = await window.storeAPI.login(username, password);
-            window.storeAPI.setToken(result.token);
-            this.currentUser = result.user;
-            this.showAuthenticatedUI();
-            return result;
+            const response = await apiService.post('/auth/login', credentials);
+
+            if (response && response.success) {
+                localStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+                window.location.href = 'home.html';
+            } else {
+                this.showError(response.error || 'Ошибка авторизации');
+            }
         } catch (error) {
-            throw error;
+            this.showError('Ошибка: ' + error.message);
         }
     }
 
-    logout() {
-        localStorage.removeItem('jwtToken');
-        this.currentUser = null;
-        window.storeAPI.token = null;
-        this.showLoginUI();
+    checkAuthState() {
+        const token = localStorage.getItem('authToken');
+        const userInfo = localStorage.getItem('userInfo');
+
+        if (token && userInfo) {
+            const user = JSON.parse(userInfo);
+            this.updateUI(user);
+        } else if (!window.location.pathname.includes('login.html')) {
+            window.location.href = 'login.html';
+        }
     }
 
-    showLoginUI() {
-        document.getElementById('app').innerHTML = `
-            <div class="login-container">
-                <div class="row justify-content-center">
-                    <div class="col-md-4">
-                        <div class="card mt-5">
-                            <div class="card-header">
-                                <h4>Вход в систему</h4>
-                            </div>
-                            <div class="card-body">
-                                <form id="loginForm">
-                                    <div class="mb-3">
-                                        <label for="username" class="form-label">Логин</label>
-                                        <input type="text" class="form-control" id="username" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="password" class="form-label">Пароль</label>
-                                        <input type="password" class="form-control" id="password" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100">Войти</button>
-                                </form>
-                                <div id="loginError" class="alert alert-danger mt-3 d-none"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('loginError');
-
-            try {
-                await this.login(username, password);
-            } catch (error) {
-                errorDiv.textContent = error.message;
-                errorDiv.classList.remove('d-none');
-            }
-        });
+    attachEventListeners() {
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
     }
 
-    showAuthenticatedUI() {
-        // Main app navigation and layout
-        document.getElementById('app').innerHTML = `
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div class="container">
-                    <a class="navbar-brand" href="#" onclick="app.showDashboard()">Store App - SPbPU</a>
-                    <div class="navbar-nav ms-auto">
-                        <span class="navbar-text me-3">
-                            ${this.currentUser.username} (${this.currentUser.role})
-                        </span>
-                        <button class="btn btn-outline-light btn-sm" onclick="auth.logout()">Выйти</button>
-                    </div>
-                </div>
-            </nav>
-            
-            <div class="container mt-4">
-                <div id="content">
-                    <!-- Content will be loaded here -->
-                </div>
-            </div>
-        `;
+    showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+        }
+    }
 
-        // Show dashboard by default
-        window.app.showDashboard();
+    updateUI(user) {
+        const userNameElement = document.getElementById('userName');
+        if (userNameElement) {
+            userNameElement.textContent = `Пользователь: ${user.username} (${user.role})`;
+        }
+    }
+
+    getAuthHeaders() {
+        const token = localStorage.getItem('authToken');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
     }
 }
 
-// Global auth instance
-window.auth = new AuthManager();
+// Глобальная функция выхода
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userInfo');
+    window.location.href = 'login.html';
+}
+
+// Инициализация сервиса аутентификации
+const authService = new AuthService();
