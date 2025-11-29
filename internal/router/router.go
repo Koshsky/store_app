@@ -26,6 +26,9 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 	chargesHandler := handlers.NewChargesHandler(db)
 	expenseItemsHandler := handlers.NewExpenseItemsHandler(db)
 
+	// ДОБАВЛЕНО: обработчики отчетов
+	reportsHandler := handlers.NewReportsHandler(db)
+
 	// API routes
 	api := r.Group("/api/v1")
 	{
@@ -60,6 +63,10 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 			auth.GET("/expense-items", expenseItemsHandler.GetExpenseItems)
 			auth.POST("/expense-items", expenseItemsHandler.CreateExpenseItem)
 			auth.DELETE("/expense-items/:id", expenseItemsHandler.DeleteExpenseItem)
+
+			// ДОБАВЛЕНО: Reports (отчеты)
+			auth.GET("/reports/profit", reportsHandler.GetProfitReport)
+			auth.GET("/reports/top-products", reportsHandler.GetTopProductsReport)
 		}
 	}
 

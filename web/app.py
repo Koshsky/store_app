@@ -10,6 +10,7 @@ from flask import (
 )
 import requests
 import os
+import json
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -571,12 +572,14 @@ def get_profit_report():
     month = request.args.get("month")
     year = request.args.get("year")
 
+    print(f"=== PROFIT REPORT REQUEST ===")
+    print(f"Month: {month}, Year: {year}")
+
     if not month and not year:
         return jsonify({"success": False, "error": "Не указаны месяц и год"})
 
+    # УБЕРИТЕ временный фикс - используйте реальный запрос к API
     response, status_code = api_client.get_profit_report(month, year)
-
-    print(f"Profit report response: {response}")
 
     if status_code == 200:
         return jsonify(response)
@@ -602,8 +605,6 @@ def get_top_products_report():
 
     response, status_code = api_client.get_top_products(start_date, end_date)
 
-    print(f"Top products response: {response}")
-
     if status_code == 200:
         return jsonify(response)
     else:
@@ -613,6 +614,51 @@ def get_top_products_report():
             else "Ошибка получения данных"
         )
         return jsonify({"success": False, "error": error_msg})
+
+
+def _handle_request(self, method, url, **kwargs):
+    try:
+        print(f"API Request: {method.__name__.upper()} {url}")
+        response = method(url, **kwargs, timeout=10)
+        print(f"API Response Status: {response.status_code}")
+        print(f"API Response Headers: {dict(response.headers)}")
+        print(f"API Raw Response Text: {response.text}")
+
+        # Пробуем распарсить JSON
+        try:
+            json_data = response.json()
+            return json_data, response.status_code
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")
+            print(f"Raw response that caused error: {repr(response.text)}")
+
+            # Попробуем очистить ответ от возможных лишних символов
+            cleaned_text = response.text.strip()
+            print(f"Cleaned response text: {repr(cleaned_text)}")
+
+            # Если есть множественные JSON объекты, возьмем первый
+            if cleaned_text.startswith("{") and "}{" in cleaned_text:
+                print("Found multiple JSON objects, taking first one")
+                first_json = cleaned_text.split("}{")[0] + "}"
+                try:
+                    json_data = json.loads(first_json)
+                    return json_data, response.status_code
+                except json.JSONDecodeError:
+                    pass
+
+            # Если все еще ошибка, вернем ошибку с сырым текстом
+            return {
+                "success": False,
+                "error": f"Invalid JSON from API: {str(e)}",
+                "raw_response": response.text[
+                    :500
+                ],  # первые 500 символов для отладки
+            }, 500
+
+    except requests.exceptions.RequestException as e:
+        return {"success": False, "error": f"API недоступен: {str(e)}"}, 503
+    except Exception as e:
+        return {"success": False, "error": f"Ошибка: {str(e)}"}, 500
 
 
 if __name__ == "__main__":
