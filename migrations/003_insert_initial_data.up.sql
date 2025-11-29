@@ -14,7 +14,7 @@ ON CONFLICT DO NOTHING;
 
 -- Вставка начальных данных для товаров, если таблица пуста
 INSERT INTO warehouses (name, quantity, amount) VALUES
-    ('Ноутбук Lenovo IdeaPad 3', 10, 55000.00),
+    ('РТ-2ПМ2 «То́поль-М»', 7, 179900000.00),
     ('Смартфон Samsung Galaxy A54', 15, 28999.90),
     ('Наушники Sony WH-CH720N', 25, 8990.00),
     ('Кофемашина DeLonghi Magnifica S', 5, 44990.00),

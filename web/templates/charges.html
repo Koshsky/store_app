@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-money-bill-wave"></i> Журнал расходов</h1>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus"></i> Добавить расход
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_charge') }}">
+                    <div class="mb-3">
+                        <label for="expense_item_id" class="form-label">Статья расходов</label>
+                        <select class="form-control" id="expense_item_id" name="expense_item_id" required>
+                            <option value="">Выберите статью расходов</option>
+                            {% for item in expense_items %}
+                            <option value="{{ item.id }}">{{ item.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Сумма</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount" min="0"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> Список расходов
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Статья расходов ID</th>
+                                <th>Сумма</th>
+                                <th>Дата расхода</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for charge in charges %}
+                            <tr>
+                                <td>{{ charge.id }}</td>
+                                <td>{{ charge.expense_item_id }}</td>
+                                <td>{{ "%.2f"|format(charge.amount) }} ₽</td>
+                                <td>{{ charge.charge_date }}</td>
+                                <td>
+                                    <a href="{{ url_for('delete_charge', id=charge.id) }}" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Удалить расход?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

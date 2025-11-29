@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: store_user
       POSTGRES_PASSWORD: store_password
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Изменяем внешний порт на 5433
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
@@ -45,18 +45,26 @@ services:
       retries: 3
 
   web:
-    image: nginx:1.26
+    build:
+      context: ./web
+      dockerfile: Dockerfile
     container_name: store_web
     ports:
       - "80:80"
-    volumes:
-      - ./web:/usr/share/nginx/html
-      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf
-    networks:
-      - store_network
-    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - API_BASE_URL=http://api:8080/api/v1
+      - SECRET_KEY=your-production-secret-key-change-this
     depends_on:
       - api
+    networks:
+      - store_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
 

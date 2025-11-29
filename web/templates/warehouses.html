@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-boxes"></i> Управление товарами</h1>
+    </div>
+</div>
+
+{% if user.role == 'admin' %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus"></i> Добавить товар
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_warehouse') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название товара</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Количество</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Цена за единицу</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount" min="0"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> Список товаров
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Количество</th>
+                                <th>Цена за единицу</th>
+                                <th>Общая стоимость</th>
+                                {% if user.role == 'admin' %}
+                                <th>Действия</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in warehouses %}
+                            <tr>
+                                <td>{{ item.id }}</td>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ "%.2f"|format(item.amount) }} ₽</td>
+                                <td>{{ "%.2f"|format(item.quantity * item.amount) }} ₽</td>
+                                {% if user.role == 'admin' %}
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ item.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <a href="{{ url_for('delete_warehouse', id=item.id) }}"
+                                        class="btn btn-sm btn-danger" onclick="return confirm('Удалить товар?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                                {% endif %}
+                            </tr>
+
+                            <!-- Edit Modal -->
+                            {% if user.role == 'admin' %}
+                            <div class="modal fade" id="editModal{{ item.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Редактировать товар</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('update_warehouse', id=item.id) }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="name{{ item.id }}" class="form-label">Название
+                                                        товара</label>
+                                                    <input type="text" class="form-control" id="name{{ item.id }}"
+                                                        name="name" value="{{ item.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="quantity{{ item.id }}"
+                                                        class="form-label">Количество</label>
+                                                    <input type="number" class="form-control" id="quantity{{ item.id }}"
+                                                        name="quantity" value="{{ item.quantity }}" min="0" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="amount{{ item.id }}" class="form-label">Цена за
+                                                        единицу</label>
+                                                    <input type="number" step="0.01" class="form-control"
+                                                        id="amount{{ item.id }}" name="amount" value="{{ item.amount }}"
+                                                        min="0" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

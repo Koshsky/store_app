@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-tachometer-alt"></i> Панель управления</h1>
+        <p class="lead">Добро пожаловать в систему управления складом SPbPU Store</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4><i class="fas fa-boxes"></i></h4>
+                        <h5>Товары</h5>
+                    </div>
+                </div>
+                <a href="{{ url_for('warehouses') }}" class="btn btn-light btn-sm mt-2">Управление</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4><i class="fas fa-shopping-cart"></i></h4>
+                        <h5>Продажи</h5>
+                    </div>
+                </div>
+                <a href="{{ url_for('sales') }}" class="btn btn-light btn-sm mt-2">Управление</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4><i class="fas fa-money-bill-wave"></i></h4>
+                        <h5>Расходы</h5>
+                    </div>
+                </div>
+                <a href="{{ url_for('charges') }}" class="btn btn-light btn-sm mt-2">Управление</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4><i class="fas fa-chart-bar"></i></h4>
+                        <h5>Отчеты</h5>
+                    </div>
+                </div>
+                <a href="{{ url_for('reports') }}" class="btn btn-light btn-sm mt-2">Просмотр</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.role == 'admin' %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs"></i> Административные функции
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{{ url_for('expense_items') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> Управление статьями расходов
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
