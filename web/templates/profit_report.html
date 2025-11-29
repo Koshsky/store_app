@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-chart-line"></i> Отчет по прибыли</h1>
+            <a href="/reports" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Назад к отчетам
+            </a>
+        </div>
+        <p class="lead">За период: <strong>{{ month }}</strong></p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-money-bill-wave"></i> Финансовые показатели
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка данных...</p>
+                </div>
+                <div id="reportContent" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h4><i class="fas fa-chart-line"></i></h4>
+                                    <h5>Прибыль</h5>
+                                    <h3 id="profitAmount">0 ₽</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h4><i class="fas fa-shopping-cart"></i></h4>
+                                    <h5>Доход от продаж</h5>
+                                    <h3 id="revenueAmount">0 ₽</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h4><i class="fas fa-money-bill-wave"></i></h4>
+                                    <h5>Расходы</h5>
+                                    <h3 id="expensesAmount">0 ₽</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4" id="additionalInfo">
+                        <!-- Дополнительная информация будет загружена здесь -->
+                    </div>
+                </div>
+                <div id="errorContent" style="display: none;">
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Ошибка</h5>
+                        <p id="errorMessage"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar"></i> Другие периоды
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex">
+                    {% set current_date = datetime.now() %}
+                    {% for i in range(1, 4) %}
+                    {% set prev_month_date = (current_date.replace(day=1) - timedelta(days=30*i)) %}
+                    {% set prev_month = prev_month_date.strftime('%Y-%m') %}
+                    <a href="/reports?month={{ prev_month }}" class="btn btn-outline-primary me-2">
+                        {{ prev_month }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const month = '{{ month }}';
+        const [year, monthNum] = month.split('-');
+
+        // Загружаем данные отчета
+        fetch(`/reports/profit?month=${monthNum}&year=${year}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('reportContent').style.display = 'block';
+
+                    // Обновляем данные в карточках
+                    const profit = data.data && data.data.profit !== undefined ? data.data.profit : 0;
+                    const revenue = data.data && data.data.revenue !== undefined ? data.data.revenue : 0;
+                    const expenses = data.data && data.data.expenses !== undefined ? data.data.expenses : 0;
+
+                    document.getElementById('profitAmount').textContent = profit.toFixed(2) + ' ₽';
+                    document.getElementById('revenueAmount').textContent = revenue.toFixed(2) + ' ₽';
+                    document.getElementById('expensesAmount').textContent = expenses.toFixed(2) + ' ₽';
+
+                    // Добавляем дополнительную информацию
+                    const additionalInfo = document.getElementById('additionalInfo');
+                    additionalInfo.innerHTML = `
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Информация по отчету</h6>
+                        <p>Отчет сформирован за ${month}. Для получения более детальной информации обратитесь к администратору.</p>
+                    </div>
+                `;
+
+                } else {
+                    document.getElementById('errorContent').style.display = 'block';
+                    document.getElementById('errorMessage').textContent = data.error || 'Неизвестная ошибка';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('errorContent').style.display = 'block';
+                document.getElementById('errorMessage').textContent = 'Ошибка при загрузке данных: ' + error.message;
+            });
+    });
+</script>
+{% endblock %}

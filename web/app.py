@@ -526,33 +526,60 @@ def delete_charge(id):
 @app.route("/reports")
 @login_required
 def reports():
-    default_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    default_end = datetime.now().strftime("%Y-%m-%d")
-    default_month = datetime.now().strftime("%Y-%m")
+    # Если есть параметры - показываем конкретный отчет
+    month = request.args.get("month")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
 
-    return render_template(
-        "reports.html",
-        user=session.get("user"),
-        default_start=default_start,
-        default_end=default_end,
-        default_month=default_month,
-    )
+    if month:
+        return render_template(
+            "profit_report.html",
+            user=session.get("user"),
+            month=month,
+            datetime=datetime,
+            timedelta=timedelta,
+        )
+    elif start_date and end_date:
+        return render_template(
+            "top_products_report.html",
+            user=session.get("user"),
+            start_date=start_date,
+            end_date=end_date,
+            datetime=datetime,
+            timedelta=timedelta,
+        )
+    else:
+        # Если нет параметров - показываем форму выбора отчета
+        default_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        default_end = datetime.now().strftime("%Y-%m-%d")
+        default_month = datetime.now().strftime("%Y-%m")
+
+        return render_template(
+            "reports_index.html",
+            user=session.get("user"),
+            default_start=default_start,
+            default_end=default_end,
+            default_month=default_month,
+            datetime=datetime,
+            timedelta=timedelta,
+        )
 
 
-@app.route("/reports/profit", methods=["POST"])
+@app.route("/reports/profit")
 @login_required
-def get_profit():
-    month = request.form.get("month")
-    year = request.form.get("year")
+def get_profit_report():
+    month = request.args.get("month")
+    year = request.args.get("year")
+
+    if not month and not year:
+        return jsonify({"success": False, "error": "Не указаны месяц и год"})
 
     response, status_code = api_client.get_profit_report(month, year)
 
+    print(f"Profit report response: {response}")
+
     if status_code == 200:
-        # Извлекаем данные из ответа API
-        if isinstance(response, dict) and "data" in response:
-            return jsonify({"success": True, "data": response["data"]})
-        else:
-            return jsonify({"success": True, "data": response})
+        return jsonify(response)
     else:
         error_msg = (
             response.get("error", "Ошибка получения данных")
@@ -562,20 +589,23 @@ def get_profit():
         return jsonify({"success": False, "error": error_msg})
 
 
-@app.route("/reports/top-products", methods=["POST"])
+@app.route("/reports/top-products")
 @login_required
-def get_top_products():
-    start_date = request.form.get("start_date")
-    end_date = request.form.get("end_date")
+def get_top_products_report():
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    if not start_date or not end_date:
+        return jsonify(
+            {"success": False, "error": "Не указаны даты начала и окончания"}
+        )
 
     response, status_code = api_client.get_top_products(start_date, end_date)
 
+    print(f"Top products response: {response}")
+
     if status_code == 200:
-        # Извлекаем данные из ответа API
-        if isinstance(response, dict) and "data" in response:
-            return jsonify({"success": True, "data": response["data"]})
-        else:
-            return jsonify({"success": True, "data": response})
+        return jsonify(response)
     else:
         error_msg = (
             response.get("error", "Ошибка получения данных")

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-trophy"></i> Топ-5 товаров по доходу</h1>
+            <a href="/reports" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Назад к отчетам
+            </a>
+        </div>
+        <p class="lead">За период: с <strong>{{ start_date }}</strong> по <strong>{{ end_date }}</strong></p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Рейтинг товаров
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка данных...</p>
+                </div>
+                <div id="reportContent" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Товар</th>
+                                    <th>Доход</th>
+                                    <th>Доля в общем доходе</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Данные будут загружены здесь -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-chart-pie"></i> Общая статистика</h6>
+                            <p>Общий доход за период: <strong id="totalRevenue">0 ₽</strong></p>
+                            <p>Количество товаров в отчете: <strong id="productsCount">0</strong></p>
+                        </div>
+                    </div>
+                </div>
+                <div id="errorContent" style="display: none;">
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Ошибка</h5>
+                        <p id="errorMessage"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar"></i> Другие периоды
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="/reports?start_date={{ (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                        class="btn btn-outline-success me-2">
+                        Последние 7 дней
+                    </a>
+                    <a href="/reports?start_date={{ (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                        class="btn btn-outline-success me-2">
+                        Последние 30 дней
+                    </a>
+                    <a href="/reports?start_date={{ (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                        class="btn btn-outline-success">
+                        Последние 90 дней
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const startDate = '{{ start_date }}';
+        const endDate = '{{ end_date }}';
+
+        // Загружаем данные отчета
+        fetch(`/reports/top-products?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success && data.data) {
+                    document.getElementById('reportContent').style.display = 'block';
+
+                    let products = data.data;
+                    if (!Array.isArray(products)) {
+                        products = Object.values(products);
+                    }
+
+                    // Сортируем по убыванию дохода
+                    products.sort((a, b) => (b.revenue || b.amount || 0) - (a.revenue || a.amount || 0));
+
+                    // Ограничиваем топ-5
+                    const topProducts = products.slice(0, 5);
+
+                    // Считаем общий доход
+                    const totalRevenue = topProducts.reduce((sum, product) => sum + (product.revenue || product.amount || 0), 0);
+
+                    // Заполняем таблицу
+                    const tableBody = document.getElementById('productsTableBody');
+                    tableBody.innerHTML = '';
+
+                    topProducts.forEach((product, index) => {
+                        const name = product.name || product.product_name || `Товар ${index + 1}`;
+                        const revenue = product.revenue || product.amount || 0;
+                        const percentage = totalRevenue > 0 ? ((revenue / totalRevenue) * 100).toFixed(1) : 0;
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${name}</strong></td>
+                        <td><span class="text-success">${revenue.toFixed(2)} ₽</span></td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: ${percentage}%">
+                                    ${percentage}%
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // Обновляем общую статистику
+                    document.getElementById('totalRevenue').textContent = totalRevenue.toFixed(2) + ' ₽';
+                    document.getElementById('productsCount').textContent = topProducts.length;
+
+                } else {
+                    document.getElementById('errorContent').style.display = 'block';
+                    document.getElementById('errorMessage').textContent = data.error || 'Нет данных за выбранный период';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('errorContent').style.display = 'block';
+                document.getElementById('errorMessage').textContent = 'Ошибка при загрузке данных: ' + error.message;
+            });
+    });
+</script>
+{% endblock %}

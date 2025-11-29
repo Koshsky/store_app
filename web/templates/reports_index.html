@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-chart-bar"></i> Отчеты</h1>
+        <p class="lead">Выберите тип отчета для просмотра</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> Прибыль за месяц
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="/reports" method="GET">
+                    <div class="mb-3">
+                        <label for="month" class="form-label">Месяц</label>
+                        <input type="month" class="form-control" id="month" name="month" value="{{ default_month }}"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Сформировать отчет
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy"></i> Топ-5 товаров
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="/reports" method="GET">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Начальная дата</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date"
+                            value="{{ default_start }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Конечная дата</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ default_end }}"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-trophy"></i> Сформировать отчет
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Быстрый доступ
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Прибыль за последние месяцы:</h6>
+                        <div class="d-grid gap-2">
+                            {% set current_date = datetime.now() %}
+                            {% for i in range(3) %}
+                            {% set report_date = current_date.replace(day=1) %}
+                            {% for j in range(i) %}
+                            {% set report_date = (report_date.replace(day=1) - timedelta(days=1)).replace(day=1) %}
+                            {% endfor %}
+                            {% set report_month = report_date.strftime('%Y-%m') %}
+                            <a href="/reports?month={{ report_month }}" class="btn btn-outline-primary btn-sm">
+                                {{ report_month }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Топ товаров за периоды:</h6>
+                        <div class="d-grid gap-2">
+                            <a href="/reports?start_date={{ (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                                class="btn btn-outline-success btn-sm">
+                                Последние 7 дней
+                            </a>
+                            <a href="/reports?start_date={{ (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                                class="btn btn-outline-success btn-sm">
+                                Последние 30 дней
+                            </a>
+                            <a href="/reports?start_date={{ (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d') }}&end_date={{ datetime.now().strftime('%Y-%m-%d') }}"
+                                class="btn btn-outline-success btn-sm">
+                                Последние 90 дней
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
